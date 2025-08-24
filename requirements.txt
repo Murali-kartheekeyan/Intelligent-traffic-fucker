@@ -1,0 +1,27 @@
+# requirements.txt
+# List of Python packages required for the Intelligent Traffic Monitoring System.
+# Web framework
+Flask
+
+# Deep Learning and Computer Vision
+# Note: Specific versions are chosen for compatibility.
+# torch and torchvision are the core of PyTorch.
+torch
+torchvision
+
+# OpenCV for video/image processing (headless is best for servers)
+opencv-python-headless
+
+# NumPy is a fundamental package for scientific computing.
+numpy
+
+# YOLOv5 dependencies
+# These are often required by the YOLOv5 model from PyTorch Hub.
+pandas
+requests
+Pillow
+matplotlib
+PyYAML
+
+# Production web server for hosting on services like Render
+gunicorn

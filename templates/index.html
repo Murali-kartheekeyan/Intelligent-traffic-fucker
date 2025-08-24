@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Intelligent Traffic Monitoring System</title>
+    <!-- Google Fonts: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Link to the external CSS file -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+
+    <div class="container-wrapper">
+        <header>
+            <h1>Intelligent Traffic Monitoring System</h1>
+        </header>
+
+        <div class="container">
+            <div class="card main-content">
+                <h2>Live Traffic Analysis</h2>
+                <div id="video-container">
+                    <div class="loader" id="loader"></div>
+                    <img id="video-feed" src="{{ url_for('video_feed') }}" alt="Traffic Video Feed" style="display:none;">
+                </div>
+                <div id="analysis-results">
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 16.5V18a2 2 0 0 1-2 2h-4a2 2 0 0 1-2-2v-1.5"/><path d="M18 12h.01"/><path d="M6 12h.01"/><path d="M12 18V6"/><path d="M7 15h10"/><path d="M10 6h4"/><path d="M12 6V3a1 1 0 0 0-1-1H9a1 1 0 0 0-1 1v3"/><circle cx="6" cy="9" r="2"/><circle cx="18" cy="9" r="2"/></svg>
+                        </div>
+                        <div class="stat-info">
+                            <p>Detected Vehicles</p>
+                            <span id="vehicle-count">0</span>
+                        </div>
+                    </div>
+                     <div class="stat-card">
+                        <div class="stat-icon">
+                           <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"/><path d="m9 12 2 2 4-4"/></svg>
+                        </div>
+                        <div class="stat-info">
+                            <p>System Status</p>
+                            <span id="status-text">Initializing...</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- New Captured Frames Gallery -->
+                <div class="frame-gallery">
+                    <h2>Captured Frames</h2>
+                    <div id="gallery-grid" class="gallery-grid">
+                        <p class="gallery-placeholder">Captured frames will appear here...</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card sidebar">
+                <h2>Traffic Signal</h2>
+                <div class="traffic-light" id="traffic-light-1">
+                    <div class="light red" id="light-red"></div>
+                    <div class="light yellow" id="light-yellow"></div>
+                    <div class="light green" id="light-green"></div>
+                </div>
+            </div>
+        </div>
+
+        <footer>
+            <p>&copy; 2025 Intelligent Traffic Monitoring Project</p>
+        </footer>
+    </div>
+
+    <script>
+        const videoFeed = document.getElementById('video-feed');
+        const loader = document.getElementById('loader');
+
+        // Show loader until the video stream is loaded
+        videoFeed.onload = function() {
+            loader.style.display = 'none';
+            videoFeed.style.display = 'block';
+        };
+        videoFeed.onerror = function() {
+            loader.style.display = 'none';
+            // Optionally display an error message
+            document.getElementById('video-container').innerHTML = '<p style="color: red; text-align: center; padding-top: 50%;">Error loading video stream.</p>';
+        };
+
+        function updateTrafficLightStatus() {
+            fetch('/traffic_light_status')
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('light-red').classList.toggle('active', data.red);
+                    document.getElementById('light-yellow').classList.toggle('active', data.yellow);
+                    document.getElementById('light-green').classList.toggle('active', data.green);
+                })
+                .catch(error => console.error('Error fetching traffic light status:', error));
+        }
+
+        function updateAnalysisData() {
+            fetch('/analysis_data')
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('vehicle-count').textContent = data.vehicle_count;
+                    document.getElementById('status-text').textContent = data.status;
+                })
+                .catch(error => console.error('Error fetching analysis data:', error));
+        }
+        
+        function updateFrameGallery() {
+            fetch('/get_captured_frames')
+                .then(response => response.json())
+                .then(filenames => {
+                    const galleryGrid = document.getElementById('gallery-grid');
+                    galleryGrid.innerHTML = ''; // Clear existing frames
+
+                    if (filenames.length === 0) {
+                        galleryGrid.innerHTML = '<p class="gallery-placeholder">No frames captured yet...</p>';
+                        return;
+                    }
+
+                    filenames.forEach(filename => {
+                        const imgElement = document.createElement('img');
+                        // Use url_for to build the correct path to the static file
+                        imgElement.src = `{{ url_for('static', filename='') }}${filename}`;
+                        imgElement.alt = 'Captured traffic frame';
+                        galleryGrid.appendChild(imgElement);
+                    });
+                })
+                .catch(error => console.error('Error fetching captured frames:', error));
+        }
+
+        // Set intervals to periodically update the UI
+        setInterval(updateTrafficLightStatus, 1000);
+        setInterval(updateAnalysisData, 1000);
+        setInterval(updateFrameGallery, 10000);
+
+        document.addEventListener('DOMContentLoaded', () => {
+            updateTrafficLightStatus();
+            updateAnalysisData();
+            updateFrameGallery(); // Initial call to populate the gallery on page load
+        });
+    </script>
+
+</body>
+</html>
